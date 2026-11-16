@@ -39,7 +39,7 @@ async def test_filters_visible_in_swagger_and_totals_match(client, admin_headers
         response = await client.get("/api/v1/users", params=params, headers=admin_headers)
         assert response.status_code == 200, response.text
         assert response.json()["data"]["total"] == 1
-        assert response.json()["data"]["items"][0]["username"] == "normal"
+        assert response.json()["data"]["items"][0]["username"] == "NORMAL"
     response = await client.get("/api/v1/users", params={"name": "%"}, headers=admin_headers)
     assert response.json()["data"]["total"] == 0
     assert (
@@ -75,7 +75,7 @@ async def test_uppercase_visible_fields_preserves_codes_and_credentials(client, 
     assert response.status_code == 201, response.text
     data = response.json()["data"]
     assert data["name"] == "HARRY" and data["last_name"] == "COBOS"
-    assert data["email"] == "new@example.com" and data["username"] == "newuser"
+    assert data["email"] == "new@example.com" and data["username"] == "NEWUSER"
     assert data["is_admin"] is False
     assert (
         await client.post(

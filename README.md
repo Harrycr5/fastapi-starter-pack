@@ -112,7 +112,8 @@ y permisos. Usuarios también admite `name`, `last_name`, `email`, `username`,
 `profile_id`, `is_active` e `is_admin`. El frontend envía los filtros como parámetros
 query; el backend valida y aplica los mismos filtros al listado y a su total.
 
-Nombres, apellidos y descripciones se guardan en mayúsculas. Los correos, códigos,
-usernames y contraseñas no se convierten a mayúsculas.
+Nombres, apellidos, descripciones y usernames nuevos se guardan en mayúsculas.
+El login por username no distingue mayúsculas de minúsculas y admite cuentas antiguas.
+Los correos, códigos y contraseñas conservan su formato; la contraseña sí distingue mayúsculas.
 
 Redis queda para después; sesiones y códigos de recuperación usan PostgreSQL.

@@ -26,7 +26,7 @@ class UserService:
 
     async def register(self, data: UserCreate) -> User:
         email = str(data.email).lower()
-        username = data.username.lower()
+        username = data.username.upper()
 
         if await self.users.get_by_email(email):
             raise UserAlreadyExistsError("El correo ya está registrado.")

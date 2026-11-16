@@ -30,7 +30,7 @@ class Base(DeclarativeBase):
 @event.listens_for(Base, "before_insert", propagate=True)
 @event.listens_for(Base, "before_update", propagate=True)
 def uppercase_display_fields(mapper, connection, target) -> None:
-    """Normalizar texto visible sin modificar identificadores ni credenciales."""
+    """Normalizar texto visible y username sin modificar contraseñas ni códigos."""
     for field in ("username", "name", "last_name", "description"):
         if field in mapper.column_attrs:
             value = getattr(target, field)

@@ -44,7 +44,7 @@ class UserRepository:
         )
 
     async def get_by_username(self, username: str) -> User | None:
-        statement = select(User).where(User.username == username)
+        statement = select(User).where(func.upper(User.username) == username.upper())
 
         result = await self.session.execute(statement)
         return result.scalar_one_or_none()
@@ -52,7 +52,7 @@ class UserRepository:
     async def get_username_for_update(self, username: str) -> User | None:
         return await self.session.scalar(
             select(User)
-            .where(User.username == username)
+            .where(func.upper(User.username) == username.upper())
             .with_for_update()
             .execution_options(populate_existing=True)
         )

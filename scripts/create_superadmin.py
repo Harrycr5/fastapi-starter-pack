@@ -2,7 +2,7 @@ import asyncio
 from getpass import getpass
 
 from pydantic import ValidationError
-from sqlalchemy import or_, select
+from sqlalchemy import func, or_, select
 
 from app.core.security import hash_password
 from app.db.models import load_models
@@ -16,7 +16,7 @@ async def create_superadmin(data: UserCreate) -> None:
     load_models()
 
     email = str(data.email).lower()
-    username = data.username.lower()
+    username = data.username.upper()
 
     try:
         async with AsyncSessionLocal.begin() as session:
@@ -24,7 +24,7 @@ async def create_superadmin(data: UserCreate) -> None:
                 select(User).where(
                     or_(
                         User.email == email,
-                        User.username == username,
+                        func.upper(User.username) == username,
                     )
                 )
             )

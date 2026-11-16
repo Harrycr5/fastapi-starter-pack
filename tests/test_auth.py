@@ -33,7 +33,7 @@ async def test_login_me_and_secrets(client, db):
         "/api/v1/users/me", headers={"Authorization": f"Bearer {tokens['access_token']}"}
     )
     assert response.status_code == 200
-    assert response.json()["data"]["username"] == "normal"
+    assert response.json()["data"]["username"] == "NORMAL"
 
 
 async def test_refresh_rotation_and_logout_revoke_both_tokens(client):
@@ -138,6 +138,6 @@ async def test_public_registration_assigns_default_profile_and_rejects_duplicate
     assert response.status_code == 201, response.text
     user = response.json()["data"]
     assert user["profile_id"] == seeded["profile_id"]
-    assert user["username"] == "newuser"
+    assert user["username"] == "NEWUSER"
     assert "password_hash" not in user
     assert (await client.post("/api/v1/auth/register", json=payload)).status_code == 409
