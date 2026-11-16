@@ -57,6 +57,10 @@ class User(UUIDMixin, TimestampMixin, Base):
         index=True,
     )
 
+    is_admin: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default=text("false")
+    )
+
     profile: Mapped[Profile] = relationship(
         back_populates="users",
         lazy="raise",

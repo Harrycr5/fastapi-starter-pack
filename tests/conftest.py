@@ -23,7 +23,7 @@ from app.core.security import hash_password  # noqa: E402
 from app.db.base import Base  # noqa: E402
 from app.db.models import load_models  # noqa: E402
 from app.main import app, fastapi_app  # noqa: E402
-from app.modules.auth.models import AuthSession  # noqa: E402
+from app.modules.auth.models import AuthSession, PasswordResetCode  # noqa: E402
 from app.modules.profiles.models import Profile  # noqa: E402
 from app.modules.users.models import User  # noqa: E402
 
@@ -32,8 +32,10 @@ PASSWORD = "TestingPassword123!"
 
 def restore_sqlite_timezone(target, context, attrs=None):
     """SQLite omite el timezone; PostgreSQL devuelve TIMESTAMPTZ consciente de UTC."""
-    if target.expires_at.tzinfo is None:
-        target.expires_at = target.expires_at.replace(tzinfo=timezone.utc)
+    for field in ("expires_at", "requested_at", "consumed_at"):
+        value = getattr(target, field, None)
+        if value is not None and value.tzinfo is None:
+            setattr(target, field, value.replace(tzinfo=timezone.utc))
 
 
 @pytest_asyncio.fixture
@@ -53,8 +55,9 @@ async def session_factory():
         engine = base_engine.execution_options(schema_translate_map={None: schema})
     else:
         base_engine = engine = create_async_engine("sqlite+aiosqlite:///:memory:")
-        event.listen(AuthSession, "load", restore_sqlite_timezone)
-        event.listen(AuthSession, "refresh", restore_sqlite_timezone)
+        for model in (AuthSession, PasswordResetCode):
+            event.listen(model, "load", restore_sqlite_timezone)
+            event.listen(model, "refresh", restore_sqlite_timezone)
 
         @event.listens_for(engine.sync_engine, "connect")
         def enable_foreign_keys(connection, record):
@@ -70,8 +73,9 @@ async def session_factory():
             async with base_engine.begin() as connection:
                 await connection.execute(DropSchema(schema, cascade=True))
         else:
-            event.remove(AuthSession, "load", restore_sqlite_timezone)
-            event.remove(AuthSession, "refresh", restore_sqlite_timezone)
+            for model in (AuthSession, PasswordResetCode):
+                event.remove(model, "load", restore_sqlite_timezone)
+                event.remove(model, "refresh", restore_sqlite_timezone)
         await base_engine.dispose()
 
 
@@ -97,6 +101,7 @@ async def seeded(db):
     admin_user = User(
         email="admin@example.com",
         username="admin",
+        is_admin=True,
         name="Admin",
         last_name="User",
         password_hash=password_hash,

@@ -4,6 +4,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
+from app.core.filters import SearchFilters
+
 DisplayName = Annotated[
     str,
     StringConstraints(
@@ -69,3 +71,13 @@ class ProfileSimpleRead(BaseModel):
 
 class ProfileDetailRead(ProfileSimpleRead):
     permissions: list[PermissionRead]
+
+
+class PermissionFilters(SearchFilters):
+    name: str | None = Field(default=None, max_length=100)
+    code: str | None = Field(default=None, max_length=100)
+    description: str | None = Field(default=None, max_length=255)
+
+
+class ProfileFilters(PermissionFilters):
+    is_active: bool | None = None

@@ -48,7 +48,7 @@ async def get_current_user(auth_session: CurrentSession, session: DbSession) -> 
     user = await UserRepository(session).get_with_permissions(auth_session.user_id)
     if user is None:
         raise unauthorized("Usuario no encontrado.")
-    if not user.is_active or not user.profile.is_active:
+    if not user.is_active or (not user.is_admin and not user.profile.is_active):
         raise HTTPException(status_code=403, detail="Usuario o perfil desactivado.")
     return user
 
@@ -58,7 +58,7 @@ CurrentUser = Annotated[User, Depends(get_current_user)]
 
 def require_permissions(*required_codes: str):
     async def check_permissions(user: CurrentUser) -> User:
-        if user.profile.code == "superadmin":
+        if user.is_admin:
             return user
         available_codes = {permission.code for permission in user.profile.permissions}
         if not set(required_codes).issubset(available_codes):
@@ -69,7 +69,7 @@ def require_permissions(*required_codes: str):
 
 
 async def require_superadmin(user: CurrentUser) -> User:
-    if user.profile.code != "superadmin":
+    if not user.is_admin:
         raise HTTPException(status_code=403, detail="Esta operación requiere ser superadmin.")
     return user
 

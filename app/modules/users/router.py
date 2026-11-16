@@ -1,12 +1,19 @@
+from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 
 from app.api.dependencies import DbSession
-from app.core.pagination import Page, Pagination
+from app.core.pagination import Page
 from app.core.responses import ApiResponse
 from app.modules.auth.dependencies import CurrentUser, SuperAdmin, require_permissions
-from app.modules.users.schemas import UserAdminUpdate, UserRead, UserSessionRead, UserUpdate
+from app.modules.users.schemas import (
+    UserAdminUpdate,
+    UserFilters,
+    UserRead,
+    UserSessionRead,
+    UserUpdate,
+)
 from app.modules.users.service import UserService
 
 router = APIRouter(prefix="/users", tags=["Users"])
@@ -32,12 +39,12 @@ async def update_me(data: UserUpdate, user: CurrentUser, session: DbSession):
     response_model=ApiResponse[Page[UserRead]],
     dependencies=[Depends(require_permissions("users.read"))],
 )
-async def list_users(session: DbSession, pagination: Pagination):
-    users, total = await UserService(session).list_users(pagination.offset, pagination.page_size)
+async def list_users(session: DbSession, filters: Annotated[UserFilters, Query()]):
+    users, total = await UserService(session).list_users(filters)
     return ApiResponse[Page[UserRead]](
         message="Usuarios obtenidos correctamente.",
         data=Page[UserRead].build(
-            [UserRead.model_validate(user) for user in users], total, pagination
+            [UserRead.model_validate(user) for user in users], total, filters
         ),
     )
 

@@ -1,9 +1,10 @@
+from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 
 from app.api.dependencies import DbSession
-from app.core.pagination import Page, Pagination
+from app.core.pagination import Page
 from app.core.responses import ApiResponse
 from app.modules.auth.dependencies import (
     SuperAdmin,
@@ -11,9 +12,11 @@ from app.modules.auth.dependencies import (
 )
 
 from .schemas import (
+    PermissionFilters,
     PermissionRead,
     ProfileCreate,
     ProfileDetailRead,
+    ProfileFilters,
     ProfilePermissionsAdd,
     ProfilePermissionsRemove,
     ProfileRead,
@@ -38,14 +41,12 @@ permissions_router = APIRouter(
     response_model=ApiResponse[Page[ProfileRead]],
     dependencies=[Depends(require_permissions("profiles.read"))],
 )
-async def list_profiles(session: DbSession, pagination: Pagination):
-    profiles, total = await ProfileService(session).list_profiles(
-        pagination.offset, pagination.page_size
-    )
+async def list_profiles(session: DbSession, filters: Annotated[ProfileFilters, Query()]):
+    profiles, total = await ProfileService(session).list_profiles(filters)
     return ApiResponse[Page[ProfileRead]](
         message="Perfiles obtenidos correctamente.",
         data=Page[ProfileRead].build(
-            [ProfileRead.model_validate(profile) for profile in profiles], total, pagination
+            [ProfileRead.model_validate(profile) for profile in profiles], total, filters
         ),
     )
 
@@ -122,16 +123,14 @@ async def remove_profile_permissions(
     response_model=ApiResponse[Page[PermissionRead]],
     dependencies=[Depends(require_permissions("permissions.read"))],
 )
-async def list_permissions(session: DbSession, pagination: Pagination):
-    permissions, total = await ProfileService(session).list_permissions(
-        pagination.offset, pagination.page_size
-    )
+async def list_permissions(session: DbSession, filters: Annotated[PermissionFilters, Query()]):
+    permissions, total = await ProfileService(session).list_permissions(filters)
     return ApiResponse[Page[PermissionRead]](
         message="Permisos obtenidos correctamente.",
         data=Page[PermissionRead].build(
             [PermissionRead.model_validate(permission) for permission in permissions],
             total,
-            pagination,
+            filters,
         ),
     )
 

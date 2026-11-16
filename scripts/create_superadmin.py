@@ -58,6 +58,7 @@ async def create_superadmin(data: UserCreate) -> None:
                     last_name=data.last_name,
                     password_hash=password_hash,
                     is_active=True,
+                    is_admin=True,
                     profile=profile,
                 )
             )

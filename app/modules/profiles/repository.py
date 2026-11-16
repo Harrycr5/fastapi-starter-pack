@@ -5,7 +5,9 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.core.filters import apply_filters
 from app.modules.profiles.models import profile_permissions
+from app.modules.profiles.schemas import PermissionFilters, ProfileFilters
 
 from .models import Permission, Profile
 
@@ -27,25 +29,23 @@ class ProfileRepository:
         )
         return result.scalar_one_or_none()
 
-    async def list_profiles(
-        self,
-        offset: int,
-        limit: int,
-    ) -> list[Profile]:
-        result = await self.session.execute(
-            select(Profile).order_by(Profile.code).offset(offset).limit(limit)
+    async def list_profiles(self, filters: ProfileFilters) -> list[Profile]:
+        statement = (
+            apply_filters(select(Profile), Profile, filters, ("code", "name", "description"))
+            .order_by(Profile.code)
+            .offset(filters.offset)
+            .limit(filters.page_size)
         )
-        return list(result.scalars().all())
+        return list((await self.session.scalars(statement)).all())
 
-    async def list_permissions(
-        self,
-        offset: int,
-        limit: int,
-    ) -> list[Permission]:
-        result = await self.session.execute(
-            select(Permission).order_by(Permission.code).offset(offset).limit(limit)
+    async def list_permissions(self, filters: PermissionFilters) -> list[Permission]:
+        statement = (
+            apply_filters(select(Permission), Permission, filters, ("code", "name", "description"))
+            .order_by(Permission.code)
+            .offset(filters.offset)
+            .limit(filters.page_size)
         )
-        return list(result.scalars().all())
+        return list((await self.session.scalars(statement)).all())
 
     async def get_permissions_by_ids(
         self,
@@ -112,8 +112,20 @@ class ProfileRepository:
                 )
             )
 
-    async def count_profiles(self) -> int:
-        return await self.session.scalar(select(func.count()).select_from(Profile)) or 0
+    async def count_profiles(self, filters: ProfileFilters) -> int:
+        statement = apply_filters(
+            select(func.count()).select_from(Profile),
+            Profile,
+            filters,
+            ("code", "name", "description"),
+        )
+        return await self.session.scalar(statement) or 0
 
-    async def count_permissions(self) -> int:
-        return await self.session.scalar(select(func.count()).select_from(Permission)) or 0
+    async def count_permissions(self, filters: PermissionFilters) -> int:
+        statement = apply_filters(
+            select(func.count()).select_from(Permission),
+            Permission,
+            filters,
+            ("code", "name", "description"),
+        )
+        return await self.session.scalar(statement) or 0

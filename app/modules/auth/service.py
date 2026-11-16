@@ -32,7 +32,7 @@ class AuthService:
 
     @staticmethod
     def ensure_active(user: User | None) -> User:
-        if user is None or not user.is_active or not user.profile.is_active:
+        if user is None or not user.is_active or (not user.is_admin and not user.profile.is_active):
             raise InvalidCredentialsError()
         return user
 
@@ -47,9 +47,9 @@ class AuthService:
     async def login(self, identifier: str, password: str) -> TokenRead:
         identifier = identifier.strip().lower()
         if "@" in identifier:
-            user = await self.users.get_by_email(identifier)
+            user = await self.users.get_email_for_update(identifier)
         else:
-            user = await self.users.get_by_username(identifier)
+            user = await self.users.get_username_for_update(identifier)
         password_hash = user.password_hash if user is not None else DUMMY_PASSWORD_HASH
         valid_password = await verify_password(password, password_hash)
         if user is None or not valid_password:

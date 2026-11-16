@@ -12,7 +12,9 @@ from app.core.exceptions import (
 from .models import Permission, Profile
 from .repository import ProfileRepository
 from .schemas import (
+    PermissionFilters,
     ProfileCreate,
+    ProfileFilters,
     ProfilePermissionsAdd,
     ProfilePermissionsRemove,
 )
@@ -23,13 +25,9 @@ class ProfileService:
         self.session = session
         self.repository = ProfileRepository(session)
 
-    async def list_profiles(
-        self,
-        offset: int,
-        limit: int,
-    ) -> tuple[list[Profile], int]:
-        profiles = await self.repository.list_profiles(offset, limit)
-        total = await self.repository.count_profiles()
+    async def list_profiles(self, filters: ProfileFilters) -> tuple[list[Profile], int]:
+        profiles = await self.repository.list_profiles(filters)
+        total = await self.repository.count_profiles(filters)
         return profiles, total
 
     async def get_profile(self, profile_id: UUID) -> Profile:
@@ -40,13 +38,9 @@ class ProfileService:
 
         return profile
 
-    async def list_permissions(
-        self,
-        offset: int,
-        limit: int,
-    ) -> tuple[list[Permission], int]:
-        permissions = await self.repository.list_permissions(offset, limit)
-        total = await self.repository.count_permissions()
+    async def list_permissions(self, filters: PermissionFilters) -> tuple[list[Permission], int]:
+        permissions = await self.repository.list_permissions(filters)
+        total = await self.repository.count_permissions(filters)
         return permissions, total
 
     async def create_profile(self, data: ProfileCreate) -> Profile:

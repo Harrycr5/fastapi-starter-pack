@@ -53,8 +53,8 @@ def get_permission_definitions() -> list[dict[str, str]]:
 
             definitions[code] = {
                 "code": code,
-                "name": f"{label} {resource}"[:100],
-                "description": (f"Permite ejecutar la acción '{action}' sobre '{resource}'."),
+                "name": f"{label} {resource}".upper()[:100],
+                "description": f"Permite ejecutar la acción '{action}' sobre '{resource}'.".upper(),
             }
 
     return [definitions[code] for code in sorted(definitions)]

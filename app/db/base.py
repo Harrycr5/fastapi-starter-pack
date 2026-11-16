@@ -1,6 +1,6 @@
 from typing import ClassVar
 
-from sqlalchemy import MetaData
+from sqlalchemy import MetaData, event
 from sqlalchemy.orm import DeclarativeBase
 
 NAMING_CONVENTION = {
@@ -25,3 +25,14 @@ class Base(DeclarativeBase):
         "update",
         "delete",
     )
+
+
+@event.listens_for(Base, "before_insert", propagate=True)
+@event.listens_for(Base, "before_update", propagate=True)
+def uppercase_display_fields(mapper, connection, target) -> None:
+    """Normalizar texto visible sin modificar identificadores ni credenciales."""
+    for field in ("name", "last_name", "description"):
+        if field in mapper.column_attrs:
+            value = getattr(target, field)
+            if isinstance(value, str):
+                setattr(target, field, value.strip().upper())

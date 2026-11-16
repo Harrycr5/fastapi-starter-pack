@@ -15,7 +15,7 @@ from ..users.exceptions import (
 )
 from ..users.models import User
 from ..users.repository import UserRepository
-from ..users.schemas import UserAdminUpdate, UserCreate, UserUpdate
+from ..users.schemas import UserAdminUpdate, UserCreate, UserFilters, UserUpdate
 
 
 class UserService:
@@ -85,13 +85,9 @@ class UserService:
 
         return user
 
-    async def list_users(
-        self,
-        offset: int,
-        limit: int,
-    ) -> tuple[list[User], int]:
-        users = await self.users.list_users(offset, limit)
-        total = await self.users.count_users()
+    async def list_users(self, filters: UserFilters) -> tuple[list[User], int]:
+        users = await self.users.list_users(filters)
+        total = await self.users.count_users(filters)
         return users, total
 
     async def get_user(self, user_id: UUID) -> User:
@@ -102,7 +98,7 @@ class UserService:
 
     async def update_user(self, user_id: UUID, data: UserAdminUpdate) -> User:
         user = await self.get_user(user_id)
-        if user.profile.code == "superadmin":
+        if user.is_admin:
             raise ForbiddenError("Las cuentas superadmin se administran desde consola.")
         changes = data.model_dump(exclude_unset=True)
         if data.profile_id is not None:

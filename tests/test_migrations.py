@@ -9,8 +9,9 @@ def test_migration_chain_and_postgresql_sql():
     output = StringIO()
     config = Config("alembic.ini", output_buffer=output)
     scripts = ScriptDirectory.from_config(config)
-    assert scripts.get_current_head() == "d72a48f0e196"
+    assert scripts.get_current_head() == "e3b426c8ad51"
     assert [revision.revision for revision in scripts.walk_revisions()] == [
+        "e3b426c8ad51",
         "d72a48f0e196",
         "b0d80c690963",
         "911b7d3f0603",

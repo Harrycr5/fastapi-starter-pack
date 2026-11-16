@@ -12,6 +12,8 @@ from pydantic import (
     model_validator,
 )
 
+from app.core.filters import SearchFilters
+
 from ..profiles.schemas import ProfileSimpleRead
 
 if TYPE_CHECKING:
@@ -91,6 +93,7 @@ class UserRead(BaseModel):
     name: str
     last_name: str
     is_active: bool
+    is_admin: bool
     profile_id: UUID
     created_at: datetime
     updated_at: datetime
@@ -104,6 +107,7 @@ class UserSimpleRead(BaseModel):
     name: str
     last_name: str
     is_active: bool
+    is_admin: bool
 
 
 class UserSessionRead(UserSimpleRead):
@@ -117,3 +121,13 @@ class UserSessionRead(UserSimpleRead):
             profile=ProfileSimpleRead.model_validate(user.profile),
             permissions=sorted({permission.code for permission in user.profile.permissions}),
         )
+
+
+class UserFilters(SearchFilters):
+    name: str | None = Field(default=None, max_length=100)
+    last_name: str | None = Field(default=None, max_length=100)
+    username: str | None = Field(default=None, max_length=50)
+    email: str | None = Field(default=None, max_length=254)
+    profile_id: UUID | None = None
+    is_active: bool | None = None
+    is_admin: bool | None = None

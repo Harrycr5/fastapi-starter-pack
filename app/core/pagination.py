@@ -1,23 +1,23 @@
 from typing import Annotated, Generic, TypeVar
 
-from fastapi import Depends, Query
-from pydantic import BaseModel
+from fastapi import Query
+from pydantic import BaseModel, ConfigDict, Field
 
 T = TypeVar("T")
 
 
-class PaginationParams:
-    def __init__(
-        self,
-        page: Annotated[int, Query(ge=1)] = 1,
-        page_size: Annotated[int, Query(ge=1, le=100)] = 20,
-    ) -> None:
-        self.page = page
-        self.page_size = page_size
-        self.offset = (page - 1) * page_size
+class PaginationParams(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    page: int = Field(default=1, ge=1, description="Número de página.")
+    page_size: int = Field(default=20, ge=1, le=100, description="Resultados por página.")
+
+    @property
+    def offset(self) -> int:
+        return (self.page - 1) * self.page_size
 
 
-Pagination = Annotated[PaginationParams, Depends()]
+Pagination = Annotated[PaginationParams, Query()]
 
 
 class Page(BaseModel, Generic[T]):

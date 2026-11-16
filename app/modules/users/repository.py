@@ -4,6 +4,9 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.core.filters import apply_filters
+from app.modules.users.schemas import UserFilters
+
 from ..profiles.models import Profile
 from ..users.models import User
 
@@ -24,11 +27,35 @@ class UserRepository:
         result = await self.session.execute(statement)
         return result.scalar_one_or_none()
 
+    async def get_for_update(self, user_id: UUID) -> User | None:
+        return await self.session.scalar(
+            select(User)
+            .where(User.id == user_id)
+            .with_for_update()
+            .execution_options(populate_existing=True)
+        )
+
+    async def get_email_for_update(self, email: str) -> User | None:
+        return await self.session.scalar(
+            select(User)
+            .where(User.email == email)
+            .with_for_update()
+            .execution_options(populate_existing=True)
+        )
+
     async def get_by_username(self, username: str) -> User | None:
         statement = select(User).where(User.username == username)
 
         result = await self.session.execute(statement)
         return result.scalar_one_or_none()
+
+    async def get_username_for_update(self, username: str) -> User | None:
+        return await self.session.scalar(
+            select(User)
+            .where(User.username == username)
+            .with_for_update()
+            .execution_options(populate_existing=True)
+        )
 
     async def get_with_permissions(self, user_id: UUID) -> User | None:
         statement = (
@@ -84,18 +111,23 @@ class UserRepository:
 
         return user
 
-    async def list_users(
-        self,
-        offset: int,
-        limit: int,
-    ) -> list[User]:
-        statement = select(User).order_by(User.created_at, User.id).offset(offset).limit(limit)
+    async def list_users(self, filters: UserFilters) -> list[User]:
+        statement = (
+            apply_filters(select(User), User, filters, ("name", "last_name", "username", "email"))
+            .order_by(User.created_at, User.id)
+            .offset(filters.offset)
+            .limit(filters.page_size)
+        )
+        return list((await self.session.scalars(statement)).all())
 
-        result = await self.session.execute(statement)
-        return list(result.scalars().all())
-
-    async def count_users(self) -> int:
-        return await self.session.scalar(select(func.count()).select_from(User)) or 0
+    async def count_users(self, filters: UserFilters) -> int:
+        statement = apply_filters(
+            select(func.count()).select_from(User),
+            User,
+            filters,
+            ("name", "last_name", "username", "email"),
+        )
+        return await self.session.scalar(statement) or 0
 
     async def update_admin_data(self, user: User, changes: dict) -> User:
         if not changes.keys() <= {"profile_id", "is_active"}:

@@ -43,7 +43,7 @@ async def test_update_own_names_cannot_change_profile(client, seeded):
     headers = {"Authorization": f"Bearer {tokens['access_token']}"}
     response = await client.patch("/api/v1/users/me", headers=headers, json={"name": "Changed"})
     assert response.status_code == 200, response.text
-    assert response.json()["data"]["name"] == "Changed"
+    assert response.json()["data"]["name"] == "CHANGED"
     assert (
         await client.patch(
             "/api/v1/users/me", headers=headers, json={"profile_id": seeded["admin_profile_id"]}
