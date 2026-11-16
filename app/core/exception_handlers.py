@@ -8,7 +8,6 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.core.exceptions import AppError
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -22,12 +21,14 @@ def error_response(
     return JSONResponse(
         status_code=status_code,
         headers=headers,
-        content=jsonable_encoder({
-            "success": False,
-            "message": message,
-            "data": None,
-            "errors": errors or [],
-        }),
+        content=jsonable_encoder(
+            {
+                "success": False,
+                "message": message,
+                "data": None,
+                "errors": errors or [],
+            }
+        ),
     )
 
 
@@ -103,4 +104,3 @@ def register_exception_handlers(app: FastAPI) -> None:
         validation_error_handler,
     )
     app.add_exception_handler(Exception, unexpected_error_handler)
-

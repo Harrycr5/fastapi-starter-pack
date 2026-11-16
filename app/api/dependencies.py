@@ -13,4 +13,3 @@ async def get_db() -> AsyncIterator[AsyncSession]:
 
 
 DbSession = Annotated[AsyncSession, Depends(get_db)]
-

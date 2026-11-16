@@ -1,13 +1,22 @@
 from datetime import datetime
+from typing import TYPE_CHECKING, Annotated
 from uuid import UUID
-from typing import Annotated, TYPE_CHECKING
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, SecretStr, StringConstraints, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    EmailStr,
+    Field,
+    SecretStr,
+    StringConstraints,
+    model_validator,
+)
 
 from ..profiles.schemas import ProfileSimpleRead
 
 if TYPE_CHECKING:
     from app.modules.users.models import User
+
 
 class UserCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -57,6 +66,22 @@ class UserUpdate(BaseModel):
         return self
 
 
+class UserAdminUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    profile_id: UUID | None = None
+    is_active: bool | None = None
+
+    @model_validator(mode="after")
+    def validate_changes(self):
+        if not self.model_fields_set:
+            raise ValueError("Envía al menos un campo para actualizar.")
+        for field in self.model_fields_set:
+            if getattr(self, field) is None:
+                raise ValueError(f"El campo {field} no acepta null.")
+        return self
+
+
 class UserRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -69,7 +94,7 @@ class UserRead(BaseModel):
     profile_id: UUID
     created_at: datetime
     updated_at: datetime
-    
+
 
 class UserSimpleRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -78,23 +103,17 @@ class UserSimpleRead(BaseModel):
     username: str
     name: str
     last_name: str
-    is_active: bool    
+    is_active: bool
 
 
 class UserSessionRead(UserSimpleRead):
     profile: ProfileSimpleRead
-    permissions: list[str] 
+    permissions: list[str]
 
     @classmethod
     def from_user(cls, user: "User") -> "UserSessionRead":
         return cls(
             **UserSimpleRead.model_validate(user).model_dump(),
             profile=ProfileSimpleRead.model_validate(user.profile),
-            permissions=sorted({
-                permission.code
-                for permission in user.profile.permissions
-            }),
+            permissions=sorted({permission.code for permission in user.profile.permissions}),
         )
-    
-
-

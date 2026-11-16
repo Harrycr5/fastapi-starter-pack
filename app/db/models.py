@@ -21,4 +21,3 @@ def load_models() -> None:
             # Si falta una dependencia interna, propaga el error.
             if exc.name != models_path:
                 raise
-

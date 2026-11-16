@@ -9,4 +9,3 @@ class UserAlreadyExistsError(AppError):
 class RegistrationUnavailableError(AppError):
     status_code = 503
     default_message = "El registro no está disponible."
-

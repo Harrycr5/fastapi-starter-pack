@@ -1,23 +1,24 @@
-from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, status
 
 from app.api.dependencies import DbSession
+from app.core.pagination import Page, Pagination
 from app.core.responses import ApiResponse
 from app.modules.auth.dependencies import (
     SuperAdmin,
     require_permissions,
 )
+
 from .schemas import (
     PermissionRead,
     ProfileCreate,
     ProfileDetailRead,
     ProfilePermissionsAdd,
+    ProfilePermissionsRemove,
     ProfileRead,
 )
 from .service import ProfileService
-
 
 router = APIRouter()
 
@@ -34,25 +35,18 @@ permissions_router = APIRouter(
 
 @profiles_router.get(
     "",
-    response_model=ApiResponse[list[ProfileRead]],
+    response_model=ApiResponse[Page[ProfileRead]],
     dependencies=[Depends(require_permissions("profiles.read"))],
 )
-async def list_profiles(
-    session: DbSession,
-    offset: Annotated[int, Query(ge=0)] = 0,
-    limit: Annotated[int, Query(ge=1, le=100)] = 20,
-):
-    profiles = await ProfileService(session).list_profiles(
-        offset,
-        limit,
+async def list_profiles(session: DbSession, pagination: Pagination):
+    profiles, total = await ProfileService(session).list_profiles(
+        pagination.offset, pagination.page_size
     )
-
-    return ApiResponse[list[ProfileRead]](
+    return ApiResponse[Page[ProfileRead]](
         message="Perfiles obtenidos correctamente.",
-        data=[
-            ProfileRead.model_validate(profile)
-            for profile in profiles
-        ],
+        data=Page[ProfileRead].build(
+            [ProfileRead.model_validate(profile) for profile in profiles], total, pagination
+        ),
     )
 
 
@@ -109,30 +103,38 @@ async def add_profile_permissions(
     )
 
 
-@permissions_router.get(
-    "",
-    response_model=ApiResponse[list[PermissionRead]],
-    dependencies=[Depends(require_permissions("permissions.read"))],
+@profiles_router.delete(
+    "/{profile_id}/permissions",
+    response_model=ApiResponse[ProfileDetailRead],
 )
-async def list_permissions(
-    session: DbSession,
-    offset: Annotated[int, Query(ge=0)] = 0,
-    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+async def remove_profile_permissions(
+    profile_id: UUID, data: ProfilePermissionsRemove, session: DbSession, admin: SuperAdmin
 ):
-    permissions = await ProfileService(session).list_permissions(
-        offset,
-        limit,
+    profile = await ProfileService(session).remove_permissions(profile_id, data)
+    return ApiResponse[ProfileDetailRead](
+        message="Permisos retirados correctamente.",
+        data=ProfileDetailRead.model_validate(profile),
     )
 
-    return ApiResponse[list[PermissionRead]](
+
+@permissions_router.get(
+    "",
+    response_model=ApiResponse[Page[PermissionRead]],
+    dependencies=[Depends(require_permissions("permissions.read"))],
+)
+async def list_permissions(session: DbSession, pagination: Pagination):
+    permissions, total = await ProfileService(session).list_permissions(
+        pagination.offset, pagination.page_size
+    )
+    return ApiResponse[Page[PermissionRead]](
         message="Permisos obtenidos correctamente.",
-        data=[
-            PermissionRead.model_validate(permission)
-            for permission in permissions
-        ],
+        data=Page[PermissionRead].build(
+            [PermissionRead.model_validate(permission) for permission in permissions],
+            total,
+            pagination,
+        ),
     )
 
 
 router.include_router(profiles_router)
 router.include_router(permissions_router)
-

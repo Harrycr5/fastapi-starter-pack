@@ -6,7 +6,6 @@ from fastapi import APIRouter
 
 import app.modules as modules
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -50,4 +49,3 @@ def register_module_routers(api_router: APIRouter) -> None:
 api_router = APIRouter(prefix="/api/v1")
 
 register_module_routers(api_router)
-

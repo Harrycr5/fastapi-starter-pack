@@ -33,9 +33,7 @@ async def create_superadmin(data: UserCreate) -> None:
                 print("El correo o username ya existe. No se modificó.")
                 return
 
-            profile = await session.scalar(
-                select(Profile).where(Profile.code == "superadmin")
-            )
+            profile = await session.scalar(select(Profile).where(Profile.code == "superadmin"))
 
             if profile is None:
                 profile = Profile(
@@ -50,9 +48,7 @@ async def create_superadmin(data: UserCreate) -> None:
                 print("El perfil superadmin está desactivado.")
                 return
 
-            password_hash = await hash_password(
-                data.password.get_secret_value()
-            )
+            password_hash = await hash_password(data.password.get_secret_value())
 
             session.add(
                 User(
@@ -104,4 +100,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

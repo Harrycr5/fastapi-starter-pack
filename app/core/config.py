@@ -2,9 +2,8 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from pydantic import Field, PostgresDsn, RedisDsn
+from pydantic import Field, PostgresDsn
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
 
 # Raíz del proyecto: contiene el archivo .env
 BASE_DIR = Path(__file__).resolve().parents[2]
@@ -27,8 +26,8 @@ class Settings(BaseSettings):
     # Base de datos
     database_url: PostgresDsn
 
-    # Redis
-    redis_url: RedisDsn = RedisDsn("redis://localhost:6379/0")
+    # Orígenes exactos del frontend. Sin cookies: autenticación Bearer.
+    cors_origins: list[str] = Field(default_factory=list)
 
     # Autenticación
     jwt_secret_key: str = Field(min_length=32, repr=False)
@@ -40,4 +39,3 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
-

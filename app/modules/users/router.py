@@ -1,11 +1,13 @@
-from fastapi import APIRouter, Query
-from typing import Annotated
-from app.api.dependencies import DbSession
-from app.core.responses import ApiResponse
-from ..auth.dependencies import CurrentUser
-from ..users.schemas import UserRead, UserUpdate, UserSessionRead
-from ..users.service import UserService
+from uuid import UUID
 
+from fastapi import APIRouter, Depends
+
+from app.api.dependencies import DbSession
+from app.core.pagination import Page, Pagination
+from app.core.responses import ApiResponse
+from app.modules.auth.dependencies import CurrentUser, SuperAdmin, require_permissions
+from app.modules.users.schemas import UserAdminUpdate, UserRead, UserSessionRead, UserUpdate
+from app.modules.users.service import UserService
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
@@ -13,40 +15,48 @@ router = APIRouter(prefix="/users", tags=["Users"])
 @router.get("/me", response_model=ApiResponse[UserSessionRead])
 async def get_me(user: CurrentUser):
     return ApiResponse[UserSessionRead](
-        message="Usuario obtenido correctamente.",
-        data=UserSessionRead.from_user(user),
+        message="Usuario obtenido correctamente.", data=UserSessionRead.from_user(user)
     )
 
 
 @router.patch("/me", response_model=ApiResponse[UserRead])
-async def update_me(
-    data: UserUpdate,
-    user: CurrentUser,
-    session: DbSession,
-):
+async def update_me(data: UserUpdate, user: CurrentUser, session: DbSession):
     updated_user = await UserService(session).update_me(user, data)
-
     return ApiResponse[UserRead](
-        message="Usuario actualizado correctamente.",
-        data=UserRead.model_validate(updated_user),
+        message="Usuario actualizado correctamente.", data=UserRead.model_validate(updated_user)
     )
 
-@router.get("", response_model=ApiResponse[list[UserRead]])
-async def list_users(
-    session: DbSession,
-    offset: Annotated[int, Query(ge=0)] = 0,
-    limit: Annotated[int, Query(ge=1, le=100)] = 20,
-):
-    users = await UserService(session).list_users(
-        offset,
-        limit,
-    )
 
-    return ApiResponse[list[UserRead]](
+@router.get(
+    "",
+    response_model=ApiResponse[Page[UserRead]],
+    dependencies=[Depends(require_permissions("users.read"))],
+)
+async def list_users(session: DbSession, pagination: Pagination):
+    users, total = await UserService(session).list_users(pagination.offset, pagination.page_size)
+    return ApiResponse[Page[UserRead]](
         message="Usuarios obtenidos correctamente.",
-        data=[
-            UserRead.model_validate(user)
-            for user in users
-        ],
+        data=Page[UserRead].build(
+            [UserRead.model_validate(user) for user in users], total, pagination
+        ),
     )
 
+
+@router.get(
+    "/{user_id}",
+    response_model=ApiResponse[UserRead],
+    dependencies=[Depends(require_permissions("users.read"))],
+)
+async def get_user(user_id: UUID, session: DbSession):
+    user = await UserService(session).get_user(user_id)
+    return ApiResponse[UserRead](
+        message="Usuario obtenido correctamente.", data=UserRead.model_validate(user)
+    )
+
+
+@router.patch("/{user_id}", response_model=ApiResponse[UserRead])
+async def update_user(user_id: UUID, data: UserAdminUpdate, session: DbSession, admin: SuperAdmin):
+    user = await UserService(session).update_user(user_id, data)
+    return ApiResponse[UserRead](
+        message="Usuario actualizado correctamente.", data=UserRead.model_validate(user)
+    )

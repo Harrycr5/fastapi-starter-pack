@@ -1,8 +1,8 @@
 from datetime import datetime
-from uuid import UUID
 from typing import Annotated
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints
+from uuid import UUID
 
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
 DisplayName = Annotated[
     str,
@@ -32,6 +32,10 @@ class ProfilePermissionsAdd(BaseModel):
     permission_ids: list[UUID] = Field(max_length=500)
 
 
+class ProfilePermissionsRemove(ProfilePermissionsAdd):
+    pass
+
+
 class PermissionRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -57,6 +61,7 @@ class ProfileSimpleRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
+    code: str
     name: str
     description: str | None
     is_active: bool
@@ -64,4 +69,3 @@ class ProfileSimpleRead(BaseModel):
 
 class ProfileDetailRead(ProfileSimpleRead):
     permissions: list[PermissionRead]
-

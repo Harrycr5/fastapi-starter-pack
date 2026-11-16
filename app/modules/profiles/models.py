@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, ClassVar
+
 from sqlalchemy import (
     Boolean,
     Column,
@@ -79,7 +80,7 @@ class Profile(UUIDMixin, TimestampMixin, Base):
 
 class Permission(UUIDMixin, TimestampMixin, Base):
     __tablename__ = "permissions"
-    
+
     __permission_actions__: ClassVar[tuple[str, ...]] = ("read",)
 
     code: Mapped[str] = mapped_column(
@@ -104,4 +105,3 @@ class Permission(UUIDMixin, TimestampMixin, Base):
         passive_deletes=True,
         lazy="raise",
     )
-

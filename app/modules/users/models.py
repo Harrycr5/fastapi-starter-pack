@@ -61,4 +61,3 @@ class User(UUIDMixin, TimestampMixin, Base):
         back_populates="users",
         lazy="raise",
     )
-    

@@ -1,17 +1,16 @@
 import asyncio
 from logging.config import fileConfig
-from alembic.command import upgrade as upgrade_command
 
-from app.core.permissions import sync_model_permissions
 from alembic import context
+from alembic.command import upgrade as upgrade_command
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from app.core.config import get_settings
+from app.core.permissions import sync_model_permissions
 from app.db.base import Base
 from app.db.models import load_models
-
 
 config = context.config
 settings = get_settings()
@@ -84,4 +83,3 @@ if context.is_offline_mode():
     run_migrations_offline()
 else:
     run_migrations_online()
-

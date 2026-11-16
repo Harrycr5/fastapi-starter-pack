@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -34,11 +34,8 @@ class UserRepository:
         statement = (
             select(User)
             .where(User.id == user_id)
-            .options(
-                selectinload(User.profile).selectinload(
-                    Profile.permissions
-                )
-            )
+            .options(selectinload(User.profile).selectinload(Profile.permissions))
+            .execution_options(populate_existing=True)
         )
 
         result = await self.session.execute(statement)
@@ -68,7 +65,7 @@ class UserRepository:
         await self.session.refresh(user)
 
         return user
-    
+
     async def update_personal_data(
         self,
         user: User,
@@ -86,23 +83,25 @@ class UserRepository:
         await self.session.refresh(user)
 
         return user
-    
+
     async def list_users(
         self,
         offset: int,
         limit: int,
     ) -> list[User]:
-        statement = (
-            select(User)
-            .offset(offset)
-            .limit(limit)
-            .options(
-                selectinload(User.profile).selectinload(
-                    Profile.permissions
-                )
-            )
-        )
+        statement = select(User).order_by(User.created_at, User.id).offset(offset).limit(limit)
 
         result = await self.session.execute(statement)
-        return result.scalars().all()
+        return list(result.scalars().all())
 
+    async def count_users(self) -> int:
+        return await self.session.scalar(select(func.count()).select_from(User)) or 0
+
+    async def update_admin_data(self, user: User, changes: dict) -> User:
+        if not changes.keys() <= {"profile_id", "is_active"}:
+            raise ValueError("Campos administrativos no permitidos.")
+        for field, value in changes.items():
+            setattr(user, field, value)
+        await self.session.flush()
+        await self.session.refresh(user)
+        return user

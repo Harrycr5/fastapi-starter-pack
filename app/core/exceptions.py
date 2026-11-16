@@ -21,4 +21,3 @@ class ConflictError(AppError):
 class ForbiddenError(AppError):
     status_code = 403
     default_message = "Operación no permitida."
-
