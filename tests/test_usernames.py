@@ -24,9 +24,7 @@ async def test_login_accepts_any_username_case(client, username):
 
 async def test_legacy_lowercase_username_can_login_and_cannot_be_duplicated(client, db, seeded):
     await db.execute(
-        update(User)
-        .where(User.id == UUID(seeded["user_id"]))
-        .values(username="legacyuser")
+        update(User).where(User.id == UUID(seeded["user_id"])).values(username="legacyuser")
     )
     await db.commit()
     for username in ("legacyuser", "LEGACYUSER", "LeGaCyUsEr"):
