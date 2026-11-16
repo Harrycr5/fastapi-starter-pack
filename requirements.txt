@@ -1,0 +1,26 @@
+# API y servidor
+fastapi
+uvicorn[standard]
+python-multipart
+
+# Validación y configuración
+pydantic[email]>=2,<3
+pydantic-settings>=2,<3
+
+# PostgreSQL y ORM asíncrono
+sqlalchemy[asyncio]>=2.0,<3
+asyncpg
+alembic
+
+# Autenticación: JWT y contraseñas con Argon2
+PyJWT>=2,<3
+pwdlib[argon2]
+
+# Redis: incluye cliente asíncrono redis.asyncio
+redis
+
+# Correos asíncronos por SMTP
+aiosmtplib
+
+# Opcional: descomentar para activar el worker
+# celery[redis]>=5,<6
