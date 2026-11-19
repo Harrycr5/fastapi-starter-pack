@@ -154,9 +154,13 @@ def sync_model_permissions(connection: Connection) -> None:
     if basic_profile_id is None:
         return
 
-    permission_ids = connection.execute(
-        sa.select(synced_permissions.c.id).where(synced_permissions.c.code.in_(basic_codes))
-    ).scalars().all()
+    permission_ids = (
+        connection.execute(
+            sa.select(synced_permissions.c.id).where(synced_permissions.c.code.in_(basic_codes))
+        )
+        .scalars()
+        .all()
+    )
 
     if not permission_ids:
         return
