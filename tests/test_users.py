@@ -78,6 +78,30 @@ async def test_disable_and_reenable_does_not_restore_revoked_sessions(
     ).status_code == 401
 
 
+async def test_admin_flag_can_be_changed_and_closes_sessions(client, admin_headers, seeded):
+    tokens = await user_tokens(client)
+    path = f"/api/v1/users/{seeded['user_id']}"
+
+    response = await client.patch(
+        path,
+        headers=admin_headers,
+        json={"is_admin": True},
+    )
+    assert response.status_code == 200, response.text
+    assert response.json()["data"]["is_admin"] is True
+    assert (
+        await client.post("/api/v1/auth/refresh", json={"refresh_token": tokens["refresh_token"]})
+    ).status_code == 401
+
+    updated = await user_tokens(client)
+    assert (
+        await client.get(
+            "/api/v1/users",
+            headers={"Authorization": f"Bearer {updated['access_token']}"},
+        )
+    ).status_code == 200
+
+
 async def test_profile_assignment_requires_admin_and_closes_sessions(
     client, admin_headers, seeded, db
 ):

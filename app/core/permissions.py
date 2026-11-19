@@ -60,6 +60,26 @@ def get_permission_definitions() -> list[dict[str, str]]:
     return [definitions[code] for code in sorted(definitions)]
 
 
+def get_basic_profile_permission_codes() -> set[str]:
+    codes: set[str] = set()
+
+    for mapper in Base.registry.mappers:
+        model = mapper.class_
+        actions = getattr(model, "__permission_actions__", ())
+
+        if not actions:
+            continue
+
+        resource = getattr(model, "__permission_resource__", None) or mapper.local_table.name
+        basic_actions = getattr(model, "__basic_profile_actions__", ())
+
+        for action in basic_actions:
+            if action in actions:
+                codes.add(f"{resource}.{action}")
+
+    return codes
+
+
 def sync_model_permissions(connection: Connection) -> None:
     definitions = get_permission_definitions()
 
@@ -103,3 +123,51 @@ def sync_model_permissions(connection: Connection) -> None:
         "Catálogo de permisos sincronizado: %s nuevos.",
         inserted_count,
     )
+
+    basic_codes = get_basic_profile_permission_codes()
+    if not basic_codes:
+        return
+
+    profiles = sa.Table(
+        "profiles",
+        sa.MetaData(),
+        sa.Column("id", sa.Uuid(as_uuid=True)),
+        sa.Column("code", sa.String(50)),
+    )
+    synced_permissions = sa.Table(
+        "permissions",
+        sa.MetaData(),
+        sa.Column("id", sa.Uuid(as_uuid=True)),
+        sa.Column("code", sa.String(100)),
+    )
+    profile_permissions = sa.Table(
+        "profile_permissions",
+        sa.MetaData(),
+        sa.Column("profile_id", sa.Uuid(as_uuid=True)),
+        sa.Column("permission_id", sa.Uuid(as_uuid=True)),
+    )
+
+    basic_profile_id = connection.execute(
+        sa.select(profiles.c.id).where(profiles.c.code == "user")
+    ).scalar_one_or_none()
+
+    if basic_profile_id is None:
+        return
+
+    permission_ids = connection.execute(
+        sa.select(synced_permissions.c.id).where(synced_permissions.c.code.in_(basic_codes))
+    ).scalars().all()
+
+    if not permission_ids:
+        return
+
+    rows = [
+        {"profile_id": basic_profile_id, "permission_id": permission_id}
+        for permission_id in permission_ids
+    ]
+    statement = (
+        insert(profile_permissions)
+        .values(rows)
+        .on_conflict_do_nothing(index_elements=["profile_id", "permission_id"])
+    )
+    connection.execute(statement)

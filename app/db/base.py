@@ -26,6 +26,10 @@ class Base(DeclarativeBase):
         "delete",
     )
 
+    # Solo los permisos marcados aquí se asignan automáticamente al perfil básico.
+    # Los modelos sensibles deben limitar o desactivar esta lista explícitamente.
+    __basic_profile_actions__: ClassVar[tuple[str, ...]] = ("read",)
+
 
 @event.listens_for(Base, "before_insert", propagate=True)
 @event.listens_for(Base, "before_update", propagate=True)

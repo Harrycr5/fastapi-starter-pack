@@ -130,7 +130,7 @@ class UserRepository:
         return await self.session.scalar(statement) or 0
 
     async def update_admin_data(self, user: User, changes: dict) -> User:
-        if not changes.keys() <= {"profile_id", "is_active"}:
+        if not changes.keys() <= {"profile_id", "is_active", "is_admin"}:
             raise ValueError("Campos administrativos no permitidos.")
         for field, value in changes.items():
             setattr(user, field, value)

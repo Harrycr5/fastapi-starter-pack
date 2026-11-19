@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 from uuid import UUID
 
 from sqlalchemy import Boolean, ForeignKey, String, Uuid, text
@@ -15,6 +15,7 @@ if TYPE_CHECKING:
 
 class User(UUIDMixin, TimestampMixin, Base):
     __tablename__ = "users"
+    __basic_profile_actions__: ClassVar[tuple[str, ...]] = ()
 
     email: Mapped[str] = mapped_column(
         String(254),

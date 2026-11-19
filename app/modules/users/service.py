@@ -98,7 +98,7 @@ class UserService:
 
     async def update_user(self, user_id: UUID, data: UserAdminUpdate) -> User:
         user = await self.get_user(user_id)
-        if user.is_admin:
+        if user.profile.code == "superadmin":
             raise ForbiddenError("Las cuentas superadmin se administran desde consola.")
         changes = data.model_dump(exclude_unset=True)
         if data.profile_id is not None:

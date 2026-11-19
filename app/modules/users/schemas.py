@@ -73,6 +73,7 @@ class UserAdminUpdate(BaseModel):
 
     profile_id: UUID | None = None
     is_active: bool | None = None
+    is_admin: bool | None = None
 
     @model_validator(mode="after")
     def validate_changes(self):

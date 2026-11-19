@@ -1,9 +1,10 @@
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from sqlalchemy import func, select
+from sqlalchemy.orm import selectinload
 
 from app.core.permissions import sync_model_permissions
-from app.modules.profiles.models import Permission
+from app.modules.profiles.models import Permission, Profile
 
 
 async def permission_ids(client, admin_headers):
@@ -21,6 +22,24 @@ async def test_permission_catalog_is_idempotent_and_excludes_sessions(db):
     assert before == after == 9
     codes = list((await db.scalars(select(Permission.code))).all())
     assert not any(code.startswith("auth_sessions.") for code in codes)
+
+
+async def test_basic_profile_permission_sync_excludes_sensitive_models(db, seeded):
+    connection = await db.connection()
+    await connection.run_sync(sync_model_permissions)
+    await db.commit()
+
+    profile = await db.scalar(
+        select(Profile)
+        .where(Profile.id == UUID(seeded["profile_id"]))
+        .options(selectinload(Profile.permissions))
+    )
+    assert profile is not None
+
+    codes = {permission.code for permission in profile.permissions}
+    assert "users.read" not in codes
+    assert "profiles.read" not in codes
+    assert "permissions.read" not in codes
 
 
 async def test_add_preserves_existing_and_ignores_duplicates(client, admin_headers, seeded):

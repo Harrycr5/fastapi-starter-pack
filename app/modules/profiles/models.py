@@ -40,6 +40,7 @@ profile_permissions = Table(
 
 class Profile(UUIDMixin, TimestampMixin, Base):
     __tablename__ = "profiles"
+    __basic_profile_actions__: ClassVar[tuple[str, ...]] = ()
 
     code: Mapped[str] = mapped_column(
         String(50),
@@ -82,6 +83,7 @@ class Permission(UUIDMixin, TimestampMixin, Base):
     __tablename__ = "permissions"
 
     __permission_actions__: ClassVar[tuple[str, ...]] = ("read",)
+    __basic_profile_actions__: ClassVar[tuple[str, ...]] = ()
 
     code: Mapped[str] = mapped_column(
         String(100),
